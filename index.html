@@ -619,6 +619,9 @@
                 <button class="tab" onclick="switchTab('test')">
                     🧪 Test Integration
                 </button>
+                <button class="tab" onclick="switchTab('dashboard')">
+                    📊 Dashboard
+                </button>
             </div>
 
 
@@ -1077,6 +1080,88 @@
                 </div>
             </div>
 
+            <!-- DASHBOARD TAB -->
+            <div id="dashboard-tab" class="tab-content">
+                <div class="alert alert-info">
+                    <span>📊</span>
+                    <div>
+                        <strong>Partner Access Dashboard</strong>
+                        <div style="margin-top: 4px; font-size: 13px; opacity: 0.9;">
+                            Danh sách tất cả partners và thông tin services/routes
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary Stats -->
+                <div class="section">
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                        <div class="card" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border: none; text-align: center;">
+                            <div style="font-size: 36px; font-weight: 700; color: white;" id="total-partners-count">0</div>
+                            <div style="font-size: 14px; color: rgba(255,255,255,0.8);">Total Partners</div>
+                        </div>
+                        <div class="card" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border: none; text-align: center;">
+                            <div style="font-size: 36px; font-weight: 700; color: white;" id="total-services-count">0</div>
+                            <div style="font-size: 14px; color: rgba(255,255,255,0.8);">Total Services</div>
+                        </div>
+                        <div class="card" style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); border: none; text-align: center;">
+                            <div style="font-size: 36px; font-weight: 700; color: white;" id="total-routes-count">0</div>
+                            <div style="font-size: 14px; color: rgba(255,255,255,0.8);">Total Routes</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Load Partners Button -->
+                <div class="section">
+                    <div class="section-header">
+                        <div>
+                            <div class="section-title">
+                                <span>👥</span> Partners List
+                            </div>
+                            <div class="section-subtitle">Click vào partner để xem chi tiết services và routes</div>
+                        </div>
+                        <button class="btn btn-primary" onclick="loadAllPartners()">
+                            <span id="dashboard-btn-icon">🔄</span>
+                            <span id="dashboard-btn-text">Load All Partners</span>
+                        </button>
+                    </div>
+
+                    <!-- Partners Table -->
+                    <div class="card" style="padding: 0; overflow: hidden;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: rgba(59, 130, 246, 0.1);">
+                                    <th style="padding: 14px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #94a3b8; border-bottom: 1px solid rgba(255,255,255,0.1); width: 40px;"></th>
+                                    <th style="padding: 14px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #94a3b8; border-bottom: 1px solid rgba(255,255,255,0.1);">#</th>
+                                    <th style="padding: 14px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #94a3b8; border-bottom: 1px solid rgba(255,255,255,0.1);">Partner Name</th>
+                                    <th style="padding: 14px 16px; text-align: center; font-size: 12px; font-weight: 600; color: #94a3b8; border-bottom: 1px solid rgba(255,255,255,0.1);">Services</th>
+                                    <th style="padding: 14px 16px; text-align: center; font-size: 12px; font-weight: 600; color: #94a3b8; border-bottom: 1px solid rgba(255,255,255,0.1);">Routes</th>
+                                    <th style="padding: 14px 16px; text-align: center; font-size: 12px; font-weight: 600; color: #94a3b8; border-bottom: 1px solid rgba(255,255,255,0.1);">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="partners-table-body">
+                                <tr>
+                                    <td colspan="6" style="padding: 40px; text-align: center; color: #64748b;">
+                                        <div style="font-size: 48px; margin-bottom: 10px;">📋</div>
+                                        <div>Click "Load All Partners" để tải danh sách partners</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Dashboard Response -->
+                <div id="dashboard-response" class="response-container">
+                    <div class="response-header">
+                        <span id="dashboard-status"></span>
+                        <button class="copy-btn" onclick="copyResponse('dashboard-response-body')">📋 Copy</button>
+                    </div>
+                    <div class="response-body">
+                        <pre id="dashboard-response-body"></pre>
+                    </div>
+                </div>
+            </div>
+
             <!-- ONBOARD TAB -->
             <div id="onboard-tab" class="tab-content">
                 <div class="alert alert-info">
@@ -1383,6 +1468,11 @@
 
             document.getElementById(tabName + '-tab').classList.add('active');
             event.target.classList.add('active');
+
+            // Auto-load dashboard when switching to dashboard tab
+            if (tabName === 'dashboard' && partnersData.length === 0) {
+                loadAllPartners();
+            }
         }
 
         function showFlow(flowName) {
@@ -1955,6 +2045,225 @@
             navigator.clipboard.writeText(text).then(() => {
                 alert('✅ Đã copy vào clipboard!');
             });
+        }
+
+        // Dashboard Functions
+        let partnersData = [];
+
+        async function loadAllPartners() {
+            const btnText = document.getElementById('dashboard-btn-text');
+            const btnIcon = document.getElementById('dashboard-btn-icon');
+            const responseContainer = document.getElementById('dashboard-response');
+            const responseStatus = document.getElementById('dashboard-status');
+            const responseBody = document.getElementById('dashboard-response-body');
+
+            btnIcon.textContent = '⏳';
+            btnText.textContent = 'Loading...';
+
+            try {
+                const response = await fetch(`http://localhost:8082/internal/api/v1/kong?partnerName=`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                responseContainer.classList.add('show');
+                responseBody.textContent = JSON.stringify(data, null, 2);
+
+                if (response.ok && data.code === 200) {
+                    responseStatus.innerHTML = `<span class="badge badge-success">✅ Success (${response.status})</span>`;
+                    partnersData = data.data;
+                    renderPartnersTable(data.data);
+                } else {
+                    responseStatus.innerHTML = `<span class="badge badge-danger">❌ Error (${response.status})</span>`;
+                }
+
+            } catch (error) {
+                responseContainer.classList.add('show');
+                responseStatus.innerHTML = '<span class="badge badge-danger">❌ Error</span>';
+                responseBody.textContent = JSON.stringify({ error: error.message }, null, 2);
+            } finally {
+                btnIcon.textContent = '🔄';
+                btnText.textContent = 'Load All Partners';
+            }
+        }
+
+        function renderPartnersTable(partners) {
+            const tableBody = document.getElementById('partners-table-body');
+            tableBody.innerHTML = '';
+
+            // Calculate totals
+            let totalServices = 0;
+            let totalRoutes = 0;
+
+            partners.forEach(partner => {
+                totalServices += partner.services ? partner.services.length : 0;
+                partner.services?.forEach(s => {
+                    totalRoutes += s.routes ? s.routes.length : 0;
+                });
+            });
+
+            document.getElementById('total-partners-count').textContent = partners.length;
+            document.getElementById('total-services-count').textContent = totalServices;
+            document.getElementById('total-routes-count').textContent = totalRoutes;
+
+            if (partners.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="padding: 40px; text-align: center; color: #64748b;">
+                            <div style="font-size: 48px; margin-bottom: 10px;">📭</div>
+                            <div>Không có partner nào</div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            partners.forEach((partner, index) => {
+                const serviceCount = partner.services ? partner.services.length : 0;
+                let routeCount = 0;
+                partner.services?.forEach(s => {
+                    routeCount += s.routes ? s.routes.length : 0;
+                });
+
+                // Main partner row
+                const row = document.createElement('tr');
+                row.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+                row.style.cursor = 'pointer';
+                row.style.transition = 'background 0.2s';
+                row.onmouseover = function() { this.style.background = 'rgba(59, 130, 246, 0.05)'; };
+                row.onmouseout = function() { if (!this.classList.contains('expanded')) this.style.background = 'transparent'; };
+                row.onclick = function() { togglePartnerDetails(index); };
+                row.id = `partner-row-${index}`;
+                row.innerHTML = `
+                    <td style="padding: 14px 16px; text-align: center;">
+                        <span id="expand-icon-${index}" style="font-size: 16px; transition: transform 0.3s;">▶</span>
+                    </td>
+                    <td style="padding: 14px 16px; font-size: 13px; color: #64748b;">${index + 1}</td>
+                    <td style="padding: 14px 16px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                <span style="font-size: 16px;">🏢</span>
+                            </div>
+                            <div>
+                                <div style="font-size: 14px; font-weight: 600; color: #f1f5f9;">${partner.partnerName}</div>
+                                <div style="font-size: 10px; color: #64748b; font-family: monospace;">${partner.id || ''}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="padding: 14px 16px; text-align: center;">
+                        <span style="background: rgba(34, 197, 94, 0.2); color: #22c55e; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600;">${serviceCount}</span>
+                    </td>
+                    <td style="padding: 14px 16px; text-align: center;">
+                        <span style="background: rgba(59, 130, 246, 0.2); color: #3b82f6; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600;">${routeCount}</span>
+                    </td>
+                    <td style="padding: 14px 16px; text-align: center;">
+                        <span style="background: #22c55e; color: white; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;">Active</span>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+
+                // Expandable details row
+                const detailsRow = document.createElement('tr');
+                detailsRow.id = `partner-details-${index}`;
+                detailsRow.style.display = 'none';
+                detailsRow.innerHTML = `
+                    <td colspan="6" style="padding: 0; background: rgba(30, 41, 59, 0.5);">
+                        <div style="padding: 20px 30px;">
+                            ${renderPartnerDetails(partner)}
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(detailsRow);
+            });
+        }
+
+        function togglePartnerDetails(index) {
+            const detailsRow = document.getElementById(`partner-details-${index}`);
+            const expandIcon = document.getElementById(`expand-icon-${index}`);
+            const partnerRow = document.getElementById(`partner-row-${index}`);
+
+            if (detailsRow.style.display === 'none') {
+                detailsRow.style.display = 'table-row';
+                expandIcon.style.transform = 'rotate(90deg)';
+                partnerRow.classList.add('expanded');
+                partnerRow.style.background = 'rgba(59, 130, 246, 0.1)';
+            } else {
+                detailsRow.style.display = 'none';
+                expandIcon.style.transform = 'rotate(0deg)';
+                partnerRow.classList.remove('expanded');
+                partnerRow.style.background = 'transparent';
+            }
+        }
+
+        function renderPartnerDetails(partner) {
+            if (!partner.services || partner.services.length === 0) {
+                return `<div style="color: #64748b; text-align: center; padding: 20px;">Không có service nào</div>`;
+            }
+
+            const methodColors = {
+                'GET': '#22c55e',
+                'POST': '#3b82f6',
+                'PUT': '#f59e0b',
+                'PATCH': '#a855f7',
+                'DELETE': '#ef4444',
+                'OPTIONS': '#64748b',
+                'HEAD': '#06b6d4',
+                'CONNECT': '#ec4899'
+            };
+
+            let html = '';
+
+            partner.services.forEach((service, sIndex) => {
+                html += `
+                    <div style="background: rgba(15, 23, 42, 0.5); border-radius: 8px; margin-bottom: ${sIndex < partner.services.length - 1 ? '12px' : '0'}; border: 1px solid rgba(255,255,255,0.05);">
+                        <!-- Service Header -->
+                        <div style="display: flex; align-items: center; padding: 12px 16px; background: rgba(59, 130, 246, 0.08); border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+                                <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                                    <span style="font-size: 12px;">🔌</span>
+                                </div>
+                                <div style="font-size: 13px; font-weight: 600; color: #f1f5f9;">${service.serviceName}</div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #64748b;">
+                                <span>→</span>
+                                <span style="color: #93c5fd; font-family: monospace; background: rgba(59, 130, 246, 0.15); padding: 3px 8px; border-radius: 4px;">${service.host}:${service.port}${service.path}</span>
+                            </div>
+                        </div>
+
+                        <!-- Routes Table -->
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: rgba(30, 41, 59, 0.5);">
+                                    <th style="padding: 10px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; width: 30px;"></th>
+                                    <th style="padding: 10px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase;">Route Name</th>
+                                    <th style="padding: 10px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase;">Paths</th>
+                                    <th style="padding: 10px 16px; text-align: right; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase;">Methods</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${service.routes?.map(route => `
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                                        <td style="padding: 10px 16px;"><span style="font-size: 12px;">🛤️</span></td>
+                                        <td style="padding: 10px 16px; font-size: 12px; color: #f1f5f9; font-weight: 500;">${route.name}</td>
+                                        <td style="padding: 10px 16px; font-size: 11px; color: #93c5fd; font-family: monospace;">${route.paths?.join(', ') || '/'}</td>
+                                        <td style="padding: 10px 16px; text-align: right;">
+                                            <div style="display: flex; gap: 3px; justify-content: flex-end; flex-wrap: wrap;">
+                                                ${route.methods?.slice(0, 4).map(m => `<span style="background: ${methodColors[m] || '#64748b'}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 9px; font-weight: 600;">${m}</span>`).join('')}${route.methods?.length > 4 ? `<span style="color: #64748b; font-size: 9px; margin-left: 3px;">+${route.methods.length - 4}</span>` : ''}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `).join('') || '<tr><td colspan="4" style="padding: 16px; text-align: center; color: #64748b;">No routes</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            });
+
+            return html;
         }
     </script>
 </body>
