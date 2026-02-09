@@ -715,9 +715,9 @@
                                     
                                     <line x1="490" y1="450" x2="570" y2="450" stroke="#64748b" stroke-width="2" marker-end="url(#arrowhead)"/>
                                     
-                                    <line x1="600" y1="360" x2="600" y2="380" stroke="#64748b" stroke-width="2"/>
-                                    <line x1="600" y1="380" x2="400" y2="380" stroke="#64748b" stroke-width="2"/>
-                                    <line x1="400" y1="380" x2="400" y2="420" stroke="#64748b" stroke-width="2" marker-end="url(#arrowhead)"/>
+                                    <line x1="400" y1="420" x2="400" y2="380" stroke="#64748b" stroke-width="2"/>
+                                    <line x1="400" y1="380" x2="600" y2="380" stroke="#64748b" stroke-width="2"/>
+                                    <line x1="600" y1="380" x2="600" y2="360" stroke="#64748b" stroke-width="2" marker-end="url(#arrowhead)"/>
                                     <text x="500" y="375" style="font-size: 11px; fill: #64748b;">ROUTE_ID</text>
                                     
                                     <!-- Arrow marker definition -->
@@ -1770,9 +1770,9 @@
                     responseStatus.innerHTML = `<span class="badge badge-success">✅ Success (${response.status})</span>`;
                     
                     // Extract and auto-fill credentials
-                    if (data && data.data && data.data.credentials) {
-                        const clientId = data.data.credentials.clientId;
-                        const clientSecret = data.data.credentials.clientSecret;
+                    if (data && data.data && data.data.credential) {
+                        const clientId = data.data.credential.clientId;
+                        const clientSecret = data.data.credential.clientSecret;
                         
                         document.getElementById('client-id').value = clientId;
                         document.getElementById('client-secret').value = clientSecret;
